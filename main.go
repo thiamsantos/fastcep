@@ -7,6 +7,9 @@ import (
 	"regexp"
 )
 
+// CEPSize is the size of a cep
+const CEPSize = 8
+
 // ErrorResponse is the error reponse for http requests
 type ErrorResponse struct {
 	Message string `json:"message"`
@@ -30,6 +33,12 @@ func handleError(w http.ResponseWriter, status int, message string) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+var nonDigitsRegex = regexp.MustCompile(`\D+`)
+
+func removeNonDigits(rawCep string) string {
+	return nonDigitsRegex.ReplaceAllString(rawCep, "")
 }
 
 var validPath = regexp.MustCompile("^/v1/cep/?$")
@@ -64,15 +73,21 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cep := CEP{
-		CEP:          value[0],
+	cep := removeNonDigits(value[0])
+
+	if len(cep) > CEPSize {
+		handleError(w, http.StatusUnprocessableEntity, "Informed CEP has more than 8 caracters")
+	}
+
+	response := CEP{
+		CEP:          cep,
 		Street:       "some street",
 		Neighborhood: "some neighborhood",
 		City:         "some city",
 		State:        "some city",
 	}
 
-	err = json.NewEncoder(w).Encode(cep)
+	err = json.NewEncoder(w).Encode(response)
 
 	if err != nil {
 		handleError(w, http.StatusInternalServerError, "Internal  Server Error")
