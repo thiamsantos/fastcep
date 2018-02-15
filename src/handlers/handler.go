@@ -56,6 +56,7 @@ func (env *Env) SearchPostalCode(w http.ResponseWriter, r *http.Request) {
 
 	if len(cepValue) > cep.CEPSize {
 		handleError(w, http.StatusUnprocessableEntity, "Informed CEP has more than 8 caracters")
+		return
 	}
 
 	cepValue = cep.LeftPadZero(cepValue, cep.CEPSize)
