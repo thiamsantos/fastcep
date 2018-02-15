@@ -1,0 +1,26 @@
+{
+  "name": "fastcep",
+  "version": "1.0.0",
+  "description": "Fast microservice for cep consulting written in go",
+  "scripts": {
+    "migrate": "knex migrate:latest",
+    "migrate:rollback": "knex migrate:rollback",
+    "seed": "knex seed:run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thiamsantos/fastcep.git"
+  },
+  "author": "Thiago Santos",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/thiamsantos/fastcep/issues"
+  },
+  "homepage": "https://github.com/thiamsantos/fastcep#readme",
+  "devDependencies": {
+    "dotenv": "^5.0.0",
+    "knex": "^0.14.3",
+    "neat-csv": "^2.1.0",
+    "pg": "^7.4.1"
+  }
+}
