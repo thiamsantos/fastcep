@@ -8,6 +8,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/unrolled/logger"
 
+	"fastcep/src/cache"
 	"fastcep/src/database"
 	"fastcep/src/handlers"
 
@@ -24,10 +25,15 @@ func main() {
 	if err != nil {
 		log.Panic(err)
 	}
-	env := &handlers.Env{DB: db}
+
+	cache, err := cache.NewClient(cache.GetCredentials())
+	if err != nil {
+		log.Panic(err)
+	}
+	env := &handlers.Env{DB: db, Cache: cache}
 
 	loggerMiddleware := logger.New()
-	router := http.HandlerFunc(env.QueryPostalCode)
+	router := http.HandlerFunc(env.SearchPostalCode)
 	app := loggerMiddleware.Handler(router)
 	port := os.Getenv("PORT")
 	http.ListenAndServe(":"+port, app)
