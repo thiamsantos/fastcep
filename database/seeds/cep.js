@@ -1,4 +1,5 @@
 const neatCsv = require('neat-csv')
+const _ = require('lodash')
 const fs = require('fs')
 const path = require('path')
 const {promisify} = require('util')
@@ -34,7 +35,10 @@ async function seed(knex) {
   for (const table of tables) {
     await knex(table.name).del()
     const content = await getContent(table)
-    await knex(table.name).insert(content)
+
+    for (const items of _.chunk(content, 99)) {
+      await knex(table.name).insert(items)
+    }
   }
 }
 

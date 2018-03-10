@@ -1,15 +1,15 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 	"os"
 
-	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/unrolled/logger"
 
 	"fastcep/src/cache"
-	"fastcep/src/database"
 	"fastcep/src/handlers"
 
 	"github.com/joho/godotenv"
@@ -21,7 +21,7 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	db, err := database.NewPool(database.GetCredentials())
+	db, err := sql.Open("sqlite3", "./database.sqlite")
 	if err != nil {
 		log.Panic(err)
 	}
