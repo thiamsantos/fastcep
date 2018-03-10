@@ -5,11 +5,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
+	cache "github.com/patrickmn/go-cache"
 	"github.com/unrolled/logger"
 
-	"fastcep/src/cache"
 	"fastcep/src/handlers"
 
 	"github.com/joho/godotenv"
@@ -26,11 +27,9 @@ func main() {
 		log.Panic(err)
 	}
 
-	cache, err := cache.NewClient(cache.GetCredentials())
-	if err != nil {
-		log.Panic(err)
-	}
-	env := &handlers.Env{DB: db, Cache: cache}
+	c := cache.New(5*time.Minute, 10*time.Minute)
+
+	env := &handlers.Env{DB: db, Cache: c}
 
 	loggerMiddleware := logger.New()
 	router := http.HandlerFunc(env.SearchPostalCode)
