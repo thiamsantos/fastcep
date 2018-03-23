@@ -22,7 +22,7 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	db, err := sql.Open("sqlite3", "./database.sqlite")
+	db, err := sql.Open("sqlite3", "./data.db")
 	if err != nil {
 		log.Panic(err)
 	}

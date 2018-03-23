@@ -3,7 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
-	"fastcep/src/cep"
+	"fastcep/src/address"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -51,19 +51,19 @@ func (env *Env) SearchPostalCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cepValue := cep.RemoveNonDigits(value[0])
+	cepValue := address.RemoveNonDigits(value[0])
 
-	if len(cepValue) > cep.CEPSize {
+	if len(cepValue) > address.CEPSize {
 		handleError(w, http.StatusUnprocessableEntity, "Informed CEP has more than 8 caracters")
 		return
 	}
 
-	cepValue = cep.LeftPadZero(cepValue, cep.CEPSize)
+	cepValue = address.LeftPadZero(cepValue, address.CEPSize)
 
 	val, found := env.Cache.Get("cep:" + cepValue)
 
 	if found {
-		err = json.NewEncoder(w).Encode(val.(cep.CEP))
+		err = json.NewEncoder(w).Encode(val.(address.Address))
 
 		if err != nil {
 			handleError(w, http.StatusInternalServerError, "Internal  Server Error")
@@ -72,10 +72,10 @@ func (env *Env) SearchPostalCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var response cep.CEP
-	row := env.DB.QueryRow("SELECT p.cep, p.street, p.neighborhood, s.name AS state, c.name AS city FROM postal_codes AS p INNER JOIN states AS s ON s.id=p.state_id INNER JOIN cities AS c ON c.id=p.city_id WHERE p.cep=$1", cepValue)
+	var response address.Address
+	row := env.DB.QueryRow("SELECT p.cep, p.street, p.neighborhood, p.state, p.city, p.uf FROM postal_codes AS p WHERE p.cep=$1", cepValue)
 
-	err = row.Scan(&response.CEP, &response.Street, &response.Neighborhood, &response.State, &response.City)
+	err = row.Scan(&response.CEP, &response.Street, &response.Neighborhood, &response.State, &response.City, &response.Uf)
 
 	switch {
 	case err == sql.ErrNoRows:
