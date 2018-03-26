@@ -1,18 +1,18 @@
 package handlers
 
 import (
+	"database/sql"
+	"encoding/json"
 	"fastcep/src/address"
 	"fmt"
 	"net/http"
 	"net/url"
 	"regexp"
-
-	"github.com/boltdb/bolt"
 )
 
 // Env holds the environment connections
 type Env struct {
-	DB *bolt.DB
+	DB *sql.DB
 }
 
 var validPath = regexp.MustCompile("^/v1/cep/?$")
@@ -56,23 +56,25 @@ func (env *Env) SearchPostalCode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cepValue = address.LeftPadZero(cepValue, address.CEPSize)
-	err = env.DB.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("postal_codes"))
-		v := b.Get([]byte(cepValue))
 
-		if v == nil {
-			message := fmt.Sprintf("CEP número %s não foi encontrado", cepValue)
-			handleError(w, http.StatusNotFound, message)
-			return nil
-		}
+	var response address.Address
+	row := env.DB.QueryRow("SELECT p.cep, p.street, p.neighborhood, p.state, p.city, p.uf FROM postal_codes AS p WHERE p.cep=$1", cepValue)
 
-		w.Write(v)
+	err = row.Scan(&response.CEP, &response.Street, &response.Neighborhood, &response.State, &response.City, &response.Uf)
 
-		return nil
-	})
-
-	if err != nil {
+	switch {
+	case err == sql.ErrNoRows:
+		message := fmt.Sprintf("CEP número %s não foi encontrado", cepValue)
+		handleError(w, http.StatusNotFound, message)
+	case err != nil:
 		handleError(w, http.StatusInternalServerError, "Internal  Server Error")
-		return
+	default:
+		err = json.NewEncoder(w).Encode(response)
+
+		if err != nil {
+			handleError(w, http.StatusInternalServerError, "Internal  Server Error")
+			return
+		}
 	}
+
 }
