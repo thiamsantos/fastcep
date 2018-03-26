@@ -1,12 +1,14 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
-	"github.com/boltdb/bolt"
 	_ "github.com/mattn/go-sqlite3"
+	cache "github.com/patrickmn/go-cache"
 	"github.com/unrolled/logger"
 
 	"fastcep/src/handlers"
@@ -20,12 +22,14 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	db, err := bolt.Open("data.db", 0600, nil)
+	db, err := sql.Open("sqlite3", "./data.db")
 	if err != nil {
 		log.Panic(err)
 	}
 
-	env := &handlers.Env{DB: db}
+	c := cache.New(5*time.Minute, 10*time.Minute)
+
+	env := &handlers.Env{DB: db, Cache: c}
 
 	loggerMiddleware := logger.New()
 	router := http.HandlerFunc(env.SearchPostalCode)
