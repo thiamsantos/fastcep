@@ -8,14 +8,11 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
-
-	cache "github.com/patrickmn/go-cache"
 )
 
 // Env holds the environment connections
 type Env struct {
-	DB    *sql.DB
-	Cache *cache.Cache
+	DB *sql.DB
 }
 
 var validPath = regexp.MustCompile("^/v1/cep/?$")
@@ -60,18 +57,6 @@ func (env *Env) SearchPostalCode(w http.ResponseWriter, r *http.Request) {
 
 	cepValue = address.LeftPadZero(cepValue, address.CEPSize)
 
-	val, found := env.Cache.Get("cep:" + cepValue)
-
-	if found {
-		err = json.NewEncoder(w).Encode(val.(address.Address))
-
-		if err != nil {
-			handleError(w, http.StatusInternalServerError, "Internal  Server Error")
-			return
-		}
-		return
-	}
-
 	var response address.Address
 	row := env.DB.QueryRow("SELECT p.cep, p.street, p.neighborhood, p.state, p.city, p.uf FROM postal_codes AS p WHERE p.cep=$1", cepValue)
 
@@ -84,8 +69,6 @@ func (env *Env) SearchPostalCode(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		handleError(w, http.StatusInternalServerError, "Internal  Server Error")
 	default:
-		env.Cache.Set("cep:"+cepValue, response, cache.DefaultExpiration)
-
 		err = json.NewEncoder(w).Encode(response)
 
 		if err != nil {
